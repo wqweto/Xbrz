@@ -1,0 +1,7 @@
+# Ignore build outputs
+
+Release/
+Debug/
+x64/
+.vs/
+*.aps
