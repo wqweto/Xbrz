@@ -21,9 +21,18 @@
 #include <algorithm>
 #include <type_traits>
 
+#define STATIC_ASSERT(cond) static_assert(cond, #cond)
 
 namespace xbrz
 {
+template <typename T>
+const T &clamp(const T &value, const T &low, const T &high)
+{
+    if (value < low) return low;
+    if (value > high) return high;
+    return value;
+}
+
 template <uint32_t N> inline
 unsigned char getByte(uint32_t val) { return static_cast<unsigned char>((val >> (8 * N)) & 0xff); }
 
@@ -202,7 +211,10 @@ void bilinearScale(const uint32_t* src, int srcWidth, int srcHeight, int srcPitc
         const double xx1 = x / scaleX - x1;
         const double x2x = 1 - xx1;
 
-        buf[x] = { x1, x2, xx1, x2x };
+        buf[x].x1 = x1;
+        buf[x].x2 = x2;
+        buf[x].xx1 = xx1;
+        buf[x].x2x = x2x;
     }
 
     for (int y = yFirst; y < yLast; ++y)

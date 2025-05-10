@@ -29,7 +29,7 @@ namespace
 template <unsigned int M, unsigned int N> inline
 uint32_t gradientRGB(uint32_t pixFront, uint32_t pixBack) //blend front color with opacity M / N over opaque background: https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
 {
-    static_assert(0 < M && M < N && N <= 1000);
+    STATIC_ASSERT(0 < M && M < N && N <= 1000);
 
     auto calcColor = [](unsigned char colFront, unsigned char colBack) -> unsigned char { return (colFront * M + colBack * (N - M)) / N; };
 
@@ -42,7 +42,7 @@ uint32_t gradientRGB(uint32_t pixFront, uint32_t pixBack) //blend front color wi
 template <unsigned int M, unsigned int N> inline
 uint32_t gradientARGB(uint32_t pixFront, uint32_t pixBack) //find intermediate color between two colors with alpha channels (=> NO alpha blending!!!)
 {
-    static_assert(0 < M && M < N && N <= 1000);
+    STATIC_ASSERT(0 < M && M < N && N <= 1000);
 
     const unsigned int weightFront = getAlpha(pixFront) * M;
     const unsigned int weightBack  = getAlpha(pixBack) * (N - M);
@@ -365,7 +365,7 @@ inline void addBottomL  (unsigned char& b, BlendType bt) { b |= (bt << 6); } //
 
 inline bool blendingNeeded(unsigned char b)
 {
-    static_assert(BLEND_NONE == 0);
+    STATIC_ASSERT(BLEND_NONE == 0);
     return b != 0;
 }
 
@@ -487,7 +487,8 @@ public:
 
     void readDhlp(Kernel_4x4& ker, int x) const //(x, y) is at kernel position F
     {
-        [[likely]] if (const int x_p2 = x + 2; 0 <= x_p2 && x_p2 < srcWidth_)
+	    const int x_p2 = x + 2;
+        /*[[likely]]*/ if (0 <= x_p2 && x_p2 < srcWidth_)
         {
             ker.d = s_m1 ? s_m1[x_p2] : 0;
             ker.h = s_0  ? s_0 [x_p2] : 0;
@@ -516,15 +517,15 @@ class OobReaderDuplicate
 {
 public:
     OobReaderDuplicate(const uint32_t* src, int srcWidth, int srcHeight, int y) :
-        s_m1(src + srcWidth * std::clamp(y - 1, 0, srcHeight - 1)),
-        s_0 (src + srcWidth * std::clamp(y,     0, srcHeight - 1)),
-        s_p1(src + srcWidth * std::clamp(y + 1, 0, srcHeight - 1)),
-        s_p2(src + srcWidth * std::clamp(y + 2, 0, srcHeight - 1)),
+        s_m1(src + srcWidth * xbrz::clamp(y - 1, 0, srcHeight - 1)),
+        s_0 (src + srcWidth * xbrz::clamp(y,     0, srcHeight - 1)),
+        s_p1(src + srcWidth * xbrz::clamp(y + 1, 0, srcHeight - 1)),
+        s_p2(src + srcWidth * xbrz::clamp(y + 2, 0, srcHeight - 1)),
         srcWidth_(srcWidth) {}
 
     void readDhlp(Kernel_4x4& ker, int x) const //(x, y) is at kernel position F
     {
-        const int x_p2 = std::clamp(x + 2, 0, srcWidth_ - 1);
+        const int x_p2 = xbrz::clamp(x + 2, 0, srcWidth_ - 1);
         ker.d = s_m1[x_p2];
         ker.h = s_0 [x_p2];
         ker.l = s_p1[x_p2];
@@ -693,7 +694,7 @@ void scaleImage(const uint32_t* src, uint32_t* trg, int srcWidth, int srcHeight,
                 addTopR(blend_xy1, res.blend_j); //set 2nd known corner for (x, y + 1)
                 preProcBuf[x] = blend_xy1; //store on current buffer position for use on next row
 
-                [[likely]] if (x + 1 < srcWidth)
+                /*[[likely]]*/ if (x + 1 < srcWidth)
                 {
                     //blend_xy1 -> blend_x1y1
                     clearAddTopL(blend_xy1, res.blend_k); //set 1st known corner for (x + 1, y + 1) and buffer for use on next column
@@ -1165,7 +1166,7 @@ void xbrz::scale(size_t factor, const uint32_t* src, uint32_t* trg, int srcWidth
         return;
     }
 
-    static_assert(SCALE_FACTOR_MAX == 6);
+    STATIC_ASSERT(SCALE_FACTOR_MAX == 6);
     switch (colFmt)
     {
         case ColorFormat::RGB:
