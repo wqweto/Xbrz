@@ -4,4 +4,10 @@ Release/
 Debug/
 x64/
 .vs/
+__DEL__/
+ipch/
+
 *.aps
+*.zip
+*.db
+*.opendb

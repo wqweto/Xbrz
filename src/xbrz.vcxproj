@@ -170,6 +170,7 @@
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
+      <BaseAddress>0x2F800000</BaseAddress>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

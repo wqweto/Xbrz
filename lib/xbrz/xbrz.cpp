@@ -176,38 +176,38 @@ double distYCbCr(uint32_t pix1, uint32_t pix2, double lumaWeight)
     return std::sqrt(square(lumaWeight * y) + square(c_b) + square(c_r));
 }
 
+// note: this cannot be declared inside distYCbCrBuffered (not supported on XP)
+//30% perf boost compared to plain distYCbCr()!
+//consumes 64 MB memory; using double is only 2% faster, but takes 128 MB
+static const std::vector<float> diffToDist = []
+{
+	std::vector<float> tmp;
+
+	for (uint32_t i = 0; i < 256 * 256 * 256; ++i) //startup time: 114 ms on Intel Core i5 (four cores)
+	{
+		const int r_diff = static_cast<signed char>(getByte<2>(i)) * 2;
+		const int g_diff = static_cast<signed char>(getByte<1>(i)) * 2;
+		const int b_diff = static_cast<signed char>(getByte<0>(i)) * 2;
+
+		const double k_b = 0.0593; //ITU-R BT.2020 conversion
+		const double k_r = 0.2627; //
+		const double k_g = 1 - k_b - k_r;
+
+		const double scale_b = 0.5 / (1 - k_b);
+		const double scale_r = 0.5 / (1 - k_r);
+
+		const double y = k_r * r_diff + k_g * g_diff + k_b * b_diff; //[!], analog YCbCr!
+		const double c_b = scale_b * (b_diff - y);
+		const double c_r = scale_r * (r_diff - y);
+
+		tmp.push_back(static_cast<float>(std::sqrt(square(y) + square(c_b) + square(c_r))));
+	}
+	return tmp;
+}();
 
 inline
 double distYCbCrBuffered(uint32_t pix1, uint32_t pix2)
 {
-    //30% perf boost compared to plain distYCbCr()!
-    //consumes 64 MB memory; using double is only 2% faster, but takes 128 MB
-    static const std::vector<float> diffToDist = []
-    {
-        std::vector<float> tmp;
-
-        for (uint32_t i = 0; i < 256 * 256 * 256; ++i) //startup time: 114 ms on Intel Core i5 (four cores)
-        {
-            const int r_diff = static_cast<signed char>(getByte<2>(i)) * 2;
-            const int g_diff = static_cast<signed char>(getByte<1>(i)) * 2;
-            const int b_diff = static_cast<signed char>(getByte<0>(i)) * 2;
-
-            const double k_b = 0.0593; //ITU-R BT.2020 conversion
-            const double k_r = 0.2627; //
-            const double k_g = 1 - k_b - k_r;
-
-            const double scale_b = 0.5 / (1 - k_b);
-            const double scale_r = 0.5 / (1 - k_r);
-
-            const double y   = k_r * r_diff + k_g * g_diff + k_b * b_diff; //[!], analog YCbCr!
-            const double c_b = scale_b * (b_diff - y);
-            const double c_r = scale_r * (r_diff - y);
-
-            tmp.push_back(static_cast<float>(std::sqrt(square(y) + square(c_b) + square(c_r))));
-        }
-        return tmp;
-    }();
-
     //if (pix1 == pix2) -> 8% perf degradation!
     //    return 0;
     //if (pix1 < pix2)
