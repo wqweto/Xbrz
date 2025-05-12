@@ -1,7 +1,6 @@
 Attribute VB_Name = "Module1"
 Option Explicit
 DefObj A-Z
-Private Const MODULE_NAME As String = "Module1"
 
 '=========================================================================
 ' API
@@ -23,7 +22,6 @@ Private Const WICBitmapInterpolationModeHighQualityCubic As Long = 4
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Private Declare Function SelectObject Lib "gdi32" (ByVal hDC As Long, ByVal hObject As Long) As Long
-Private Declare Function SetBkColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function CreateCompatibleDC Lib "gdi32" (ByVal hDC As Long) As Long
 Private Declare Function DeleteDC Lib "gdi32" (ByVal hDC As Long) As Long
@@ -44,22 +42,6 @@ Private Declare Function IWICImagingFactory_CreateBitmapFromMemory_Proxy Lib "wi
 Private Declare Function IWICImagingFactory_CreateBitmapScaler_Proxy Lib "windowscodecs" (ByVal pFactory As stdole.IUnknown, ppIBitmapScaler As stdole.IUnknown) As Long
 Private Declare Function IWICBitmapScaler_Initialize_Proxy Lib "windowscodecs" (ByVal pThis As stdole.IUnknown, ByVal pISource As stdole.IUnknown, ByVal uiWidth As Long, ByVal uiHeight As Long, ByVal lMode As Long) As Long
 Private Declare Function IWICBitmapSource_CopyPixels_Proxy Lib "windowscodecs" (ByVal pThis As stdole.IUnknown, prc As Any, ByVal cbStride As Long, ByVal cbBufferSize As Long, pbBuffer As Any) As Long
-
-Private Type RECT
-    Left                As Long
-    Top                 As Long
-    Right               As Long
-    Bottom              As Long
-End Type
-
-Private Type PAINTSTRUCT
-    hDC                 As Long
-    fErase              As Long
-    rcPaint             As RECT
-    fRestore            As Long
-    fIncUpdate          As Long
-    rgbReserved(32)     As Byte
-End Type
 
 Private Type BITMAPINFOHEADER
     biSize              As Long
@@ -357,29 +339,26 @@ QH:
     End If
 End Function
 
-Public Function XbrzScale(ByVal lFactor As Long, ByVal lpSrc As Long, ByVal lpDst As Long, ByVal lWidth As Long, ByVal lHeight As Long, ByVal eFormat As XbrzColorFormat) As Long
+Private Function XbrzScale(ByVal lFactor As Long, ByVal lpSrc As Long, ByVal lpDst As Long, ByVal lWidth As Long, ByVal lHeight As Long, ByVal eFormat As XbrzColorFormat) As Long
+    Debug.Assert lpSrc <> 0 And lpDst <> 0
     On Error GoTo QH
     XbrzScale = APIXbrzScale(lFactor, lpSrc, lpDst, lWidth, lHeight, eFormat)
 QH:
 End Function
 
-Public Function XbrzBilinearScale(ByVal lpSrc As Long, ByVal lSrcWidth As Long, ByVal lSrcHeight As Long, ByVal lpDst As Long, ByVal lDstWidth As Long, ByVal lDstHeight As Long) As Long
+Private Function XbrzBilinearScale(ByVal lpSrc As Long, ByVal lSrcWidth As Long, ByVal lSrcHeight As Long, ByVal lpDst As Long, ByVal lDstWidth As Long, ByVal lDstHeight As Long) As Long
+    Debug.Assert lpSrc <> 0 And lpDst <> 0
     On Error GoTo QH
     XbrzBilinearScale = APIXbrzBilinearScale(lpSrc, lSrcWidth, lSrcHeight, lpDst, lDstWidth, lDstHeight)
 QH:
 End Function
 
-Public Function WicBicubicScale(ByVal lpSrc As Long, ByVal lSrcWidth As Long, ByVal lSrcHeight As Long, ByVal lpDst As Long, ByVal lDstWidth As Long, ByVal lDstHeight As Long, Optional ByVal HasAlpha As Long) As Boolean
+Private Function WicBicubicScale(ByVal lpSrc As Long, ByVal lSrcWidth As Long, ByVal lSrcHeight As Long, ByVal lpDst As Long, ByVal lDstWidth As Long, ByVal lDstHeight As Long, Optional ByVal HasAlpha As Long) As Boolean
     Dim aGUID(0 To 3)   As Long
     Dim pBitmap         As stdole.IUnknown
     Dim pScaler         As stdole.IUnknown
     
-    If lpSrc = 0 Or lpDst = 0 Then
-        #If DebugMode Then
-            DebugPrint MODULE_NAME, "WicBicubicScale", "Invalid pointers"
-        #End If
-        GoTo QH
-    End If
+    Debug.Assert lpSrc <> 0 And lpDst <> 0
     If m_pWicFactory Is Nothing Then
         If WICCreateImagingFactory_Proxy(WINCODEC_SDK_VERSION2, m_pWicFactory) < 0 Then
             If WICCreateImagingFactory_Proxy(WINCODEC_SDK_VERSION1, m_pWicFactory) < 0 Then

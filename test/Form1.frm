@@ -80,30 +80,45 @@ Private Property Get VbeRef() As VBIDE.VBE
 End Property
 
 Private Sub pvClipClear()
+    Dim lRetry          As Long
+    
     On Error GoTo EH
     Clipboard.Clear
     Exit Sub
 EH:
-    Call Sleep(1)
-    Resume
+    If lRetry < 100 Then
+        lRetry = lRetry + 1
+        Call Sleep(1)
+        Resume
+    End If
 End Sub
 
 Private Function pvClipGetData() As IPictureDisp
+    Dim lRetry          As Long
+    
     On Error GoTo EH
     Set pvClipGetData = Clipboard.GetData()
     Exit Function
 EH:
-    Call Sleep(1)
-    Resume
+    If lRetry < 100 Then
+        lRetry = lRetry + 1
+        Call Sleep(1)
+        Resume
+    End If
 End Function
 
 Private Sub pvBtnCopyFace(oBtn As Object)
+    Dim lRetry          As Long
+    
     On Error GoTo EH
     oBtn.CopyFace
     Exit Sub
 EH:
-    Call Sleep(1)
-    Resume
+    If lRetry < 100 Then
+        lRetry = lRetry + 1
+        Call Sleep(1)
+        Resume
+    End If
 End Sub
 
 Private Sub pvRenderUpscaled(oBox As PictureBox, oSrc As StdPicture)
@@ -121,7 +136,7 @@ Private Sub pvRenderUpscaled(oBox As PictureBox, oSrc As StdPicture)
     oBox.CurrentY = 0
     oBox.Print "Stretched"
     oBox.CurrentY = 32
-    For Each vElem In Array(Empty, 24, 32, 40, 48, 64, 80, 96, 112, 128)
+    For Each vElem In Array(Empty, 24, 32, 40, 48, 64, 80, 96)
         oBox.CurrentX = 6
         If Not IsEmpty(vElem) Then
             oBox.Print vElem & " px"
@@ -169,35 +184,37 @@ Private Sub Form_Activate()
     m_bActive = True
     ReDim m_uHitInfo(0 To 1000) As UcsHitInfo
     For Each oBar In VbeRef.CommandBars
-        If CurrentX <> 260 Then
-            CurrentY = CurrentY + 16
-            CurrentX = 16
-            Print oBar.Name
-            CurrentX = 260
-        End If
-        For Each oBtn In oBar.Controls
-            If oBtn.Type = 1 Then
-                pvClipClear
-                pvBtnCopyFace oBtn
-                If Clipboard.GetFormat(vbCFBitmap) Then
-                    Set pPic = pvClipGetData()
-                    With m_uHitInfo(lIdx)
-                        .Left = CurrentX
-                        .Top = CurrentY - 16
-                        .Right = .Left + HM2Pix(pPic.Width)
-                        .Bottom = .Top + HM2Pix(pPic.Height)
-                        Set .Picture = pPic
-                        RenderPicture pPic, hDC, .Left, .Top, .Right - .Left, .Bottom - .Top, 0, pPic.Height, pPic.Width, -pPic.Height
-                        CurrentX = .Right + 16
-                    End With
-                    lIdx = lIdx + 1
-                    Refresh
-                End If
+        If Left$(oBar.Name, 8) <> "DataView" And Left$(oBar.Name, 7) <> "Toolbox" And oBar.Name <> "Color Palette" And oBar.Name <> "Property Browser" Then
+            If CurrentX <> 260 Then
+                CurrentY = CurrentY + 16
+                CurrentX = 16
+                Print oBar.Name
+                CurrentX = 260
             End If
-        Next
-'        If CurrentY > 32 Then
-'            Exit For
-'        End If
+            For Each oBtn In oBar.Controls
+                If oBtn.Type = 1 Then
+                    pvClipClear
+                    pvBtnCopyFace oBtn
+                    If Clipboard.GetFormat(vbCFBitmap) Then
+                        Set pPic = pvClipGetData()
+                        With m_uHitInfo(lIdx)
+                            .Left = CurrentX
+                            .Top = CurrentY - 16
+                            .Right = .Left + HM2Pix(pPic.Width)
+                            .Bottom = .Top + HM2Pix(pPic.Height)
+                            Set .Picture = pPic
+                            RenderPicture pPic, hDC, .Left, .Top, .Right - .Left, .Bottom - .Top, 0, pPic.Height, pPic.Width, -pPic.Height
+                            CurrentX = .Right + 16
+                        End With
+                        lIdx = lIdx + 1
+                        Refresh
+                    End If
+                End If
+            Next
+        End If
+        If CurrentY > 96 Then
+            Exit For
+        End If
     Next
     ReDim Preserve m_uHitInfo(0 To lIdx) As UcsHitInfo
 End Sub
